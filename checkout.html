@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Órbita</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" href="img/galaxy.png" type="image/png">
+</head>
+<body>
+  <div id="particles-js"></div>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="img/galaxy.png" alt="Órbita logo" class="logo-img">
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="index.html#catalog">Catálogo</a></li>
+      <li><a href="carrito.html">Carrito <span id="cart-count">0</span></a></li>
+    </ul>
+  </nav>
+
+  <div class="wrapper">
+    <section class="checkout-section">
+      <h1>Finalizar Compra</h1>
+      <div id="checkout-resume"></div>
+      <form id="checkout-form">
+        <h2>Datos de Envío</h2>
+        <div class="form-group">
+          <label for="nombre">Nombre completo</label>
+          <input type="text" id="nombre" required>
+        </div>
+        <div class="form-group">
+          <label for="direccion">Dirección</label>
+          <input type="text" id="direccion" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label for="telefono">Teléfono</label>
+          <input type="tel" id="telefono" required>
+        </div>
+
+        <h2>Método de Pago</h2>
+        <div class="payment-methods">
+          <div class="payment-method">
+            <input type="radio" id="tarjeta" name="pago" value="tarjeta" checked>
+            <label for="tarjeta">Tarjeta (Mercado Pago)</label>
+          </div>
+          <div class="payment-method">
+            <input type="radio" id="efectivo" name="pago" value="efectivo">
+            <label for="efectivo">Efectivo al recibir</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-comprar">Completar Compra</button>
+      </form>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Órbita</h4>
+        <p>Tu destino para productos de calidad con un toque estelar. Explorando nuevas fronteras en moda y estilo.</p>
+        <div class="social-icons">
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+  
+      <div class="footer-section">
+        <h4>Contacto</h4>
+        <a href="tel:+2494625738"><i class="fas fa-phone"></i> +5492494625738</a>
+        <a href="mailto:info@orbita.com"><i class="fas fa-envelope"></i> info@orbita.com</a>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2023 Órbita. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script src="script.js"></script>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+</body>
+</html>

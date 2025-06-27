@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbita</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" href="img/galaxy.png" type="image/png">
+</head>
+<body>
+  <div id="particles-js"></div>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="img/galaxy.png" alt="Órbita logo" class="logo-img">
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Inicio</a></li>
+      <li><a href="#catalog">Catálogo</a></li>
+      <li><a href="carrito.html">Carrito <span id="cart-count">0</span></a></li>
+    </ul>
+  </nav>
+  
+  <div class="wrapper">
+    <section class="hero">
+      <div class="hero-content">
+        <div class="title-container">
+          <h1 id="typing-title"></h1>
+          <div class="typing-cursor" id="cursor"></div>
+        </div>
+        <p>Zapatillas para quienes orbitan en su propio universo</p>
+        <a href="#catalog" class="scroll-down">↓ Ver catálogo</a>
+      </div>
+    </section>
+    
+    <section id="catalog">
+      <h1 class="catalog-title">Catálogo</h1>
+      <div class="products-container"></div>
+    </section>
+  </div>
+  
+  <!-- Pie de página -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Órbita</h4>
+        <p>Tu destino para productos de calidad con un toque estelar. Explorando nuevas fronteras en moda y estilo.</p>
+        <div class="social-icons">
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+  
+      <div class="footer-section">
+        <h4>Contacto</h4>
+        <a href="tel:+2494625738"><i class="fas fa-phone"></i> +5492494625738</a>
+        <a href="mailto:info@orbita.com"><i class="fas fa-envelope"></i> info@orbita.com</a>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2023 Órbita. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+  
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script src="script.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const title = document.getElementById('typing-title');
+    const cursor = document.getElementById('cursor');
+    const text = "Órbita"; 
+    
+    let i = 0;
+    const typing = setInterval(() => {
+      if (i < text.length) {
+        title.textContent += text.charAt(i);
+        i++;
+      } else {
+        clearInterval(typing);
+      }
+    }, 150);
+  });
+</script>
+</body>
+</html>
