@@ -5,6 +5,39 @@
   <title>Compra Exitosa - Órbita</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
+  <style>
+    .whatsapp-btn {
+      background-color: #25D366;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 5px;
+      display: inline-flex;
+      align-items: center;
+      margin-top: 15px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    .whatsapp-btn:hover {
+      background-color: #128C7E;
+    }
+    .whatsapp-btn i {
+      margin-right: 10px;
+      font-size: 1.2em;
+    }
+    .payment-steps {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+    .payment-steps ol {
+      padding-left: 20px;
+    }
+    .payment-steps li {
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 
 <body class="success">
@@ -26,12 +59,9 @@
   <!-- Contenido principal -->
   <div class="wrapper">
     <section class="success-section">
-      <h1><i class="fas fa-check-circle"></i> ¡Compra Exitosa!</h1>
-      <p>Tu pedido ha sido procesado correctamente. Te hemos enviado un correo electrónico con todos los detalles de tu compra.</p>
-      <p>Recibirás tu pedido en un plazo de 3-5 días hábiles. Gracias por confiar en Órbita.</p>
-      
+      <h1><i class="fas fa-check-circle"></i> ¡Reserva Exitosa!</h1>
+      <p>Tu pedido ha sido registrado correctamente. Para completar la compra, sigue estos pasos:</p>
       <div id="resumen-compra"></div>
-      
       <a href="index.html" class="btn">Volver a la tienda</a>
     </section>
   </div>
