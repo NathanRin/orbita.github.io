@@ -2,7 +2,6 @@
 // DATOS ZAPATILLAS
 // --------------------
 
-
 const zapatillas = {
   "Vans KNU Skool": {
     img: "img/knu 1.jpeg",
@@ -25,90 +24,113 @@ const zapatillas = {
 };
 
 // --------------------
-// GESTIÓN DEL CARRITO
+// GESTIÓN DEL CARRITO (VERSIÓN CORREGIDA)
 // --------------------
 let cart = JSON.parse(localStorage.getItem("carrito")) || [];
 
 function saveCart() {
   localStorage.setItem("carrito", JSON.stringify(cart));
   updateCartCount();
+  renderCartItems(); // Añadido para actualizar la vista del carrito
 }
 
 function addToCart(producto) {
-  cart.push(producto);
+  // Buscar si el producto con mismo nombre y talle ya existe en el carrito
+  const index = cart.findIndex(item => 
+    item.nombre === producto.nombre && item.talle === producto.talle);
+  
+  if (index !== -1) {
+    // Si ya existe, incrementar la cantidad
+    cart[index].cantidad = (cart[index].cantidad || 1) + 1;
+  } else {
+    // Si no existe, agregar nuevo producto con cantidad 1
+    cart.push({
+      ...producto,
+      cantidad: 1
+    });
+  }
+  
   saveCart();
-  alert(`${producto.nombre} (Talle: ${producto.talle}) fue agregado al carrito`);
+  showToastNotification(`${producto.nombre} (Talle: ${producto.talle}) fue agregado al carrito`);
+}
+
+function showToastNotification(message) {
+  // Crear elemento de notificación
+  const toast = document.createElement('div');
+  toast.className = 'toast-notification';
+  toast.innerHTML = `
+    <i class="fas fa-check-circle"></i>
+    <span>${message}</span>
+  `;
+  
+  // Añadir al body
+  document.body.appendChild(toast);
+  
+  // Mostrar
+  setTimeout(() => toast.classList.add('show'), 100);
+  
+  // Ocultar después de 3 segundos
+  setTimeout(() => {
+    toast.classList.remove('show');
+    // Eliminar después de la animación
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 function removeFromCart(index) {
-  cart.splice(index, 1);
-  saveCart();
-  renderCartItems();
+  if (index >= 0 && index < cart.length) {
+    cart.splice(index, 1);
+    saveCart();
+  }
 }
 
 function clearCart() {
-  cart = [];
-  saveCart();
-  renderCartItems();
+  // Animación al vaciar el carrito
+  const cartItems = document.querySelectorAll('.cart-item');
+  cartItems.forEach(item => {
+    item.style.transform = 'translateX(-100%)';
+    item.style.opacity = '0';
+    item.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+  });
+  
+  // Vaciar después de la animación
+  setTimeout(() => {
+    cart = [];
+    saveCart();
+    renderCartItems();
+  }, 300);
 }
 
 function calculateTotal() {
-  return cart.reduce((total, item) => total + item.precio, 0);
+  return cart.reduce((total, item) => total + (item.precio * (item.cantidad || 1)), 0);
 }
 
 function updateCartCount() {
+  const totalItems = cart.reduce((total, item) => total + (item.cantidad || 1), 0);
   document.querySelectorAll('#cart-count').forEach(el => {
-    el.textContent = cart.length;
+    el.textContent = totalItems;
   });
 }
 
 // --------------------
-// FUNCIONES GENERALES
+// FUNCIONES GENERALES (VERSIÓN MEJORADA)
 // --------------------
 function verDetalle(nombre) {
   window.location.href = `detalle.html?nombre=${encodeURIComponent(nombre)}`;
 }
 
 function renderProducts(container, products) {
-  if (!container) {
-    console.error('Contenedor de productos no encontrado');
-    return;
-  }
+  if (!container) return;
   
-  container.innerHTML = '';
-  
-  if (!products || Object.keys(products).length === 0) {
-    container.innerHTML = '<p>No hay productos disponibles</p>';
-    return;
-  }
-  
-  Object.entries(products).forEach(([nombre, datos]) => {
-    const productCard = document.createElement('div');
-    productCard.className = 'shoe';
-    productCard.innerHTML = `
-      <img src="${datos.img}" alt="${nombre}">
-      <h3 class="shoe-name">${nombre}</h3>
-      <p class="price">$${datos.precio.toLocaleString('es-AR')}</p>
-      <button class="add-cart">
-        <i class="fas fa-shopping-cart"></i>
-      </button>
-    `;
-    
-    productCard.addEventListener('click', () => verDetalle(nombre));
-    
-    const cartBtn = productCard.querySelector('.add-cart');
-    cartBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      addToCart({
-        nombre: nombre,
-        precio: datos.precio,
-        talle: "Sin seleccionar",
-        imagen: datos.img
-      });
-    });
-    
-    container.appendChild(productCard);
-  });
+  container.innerHTML = Object.keys(products).length === 0 
+    ? '<p>No hay productos disponibles</p>'
+    : Object.entries(products).map(([nombre, datos]) => `
+        <div class="shoe" onclick="verDetalle('${nombre}')">
+          <img src="${datos.img}" alt="${nombre}">
+          <h3 class="shoe-name">${nombre}</h3>
+          <p class="price">$${datos.precio.toLocaleString('es-AR')}</p>
+        </div>
+      `).join('');
 }
 
 function renderCartItems() {
@@ -123,304 +145,252 @@ function renderCartItems() {
     return;
   }
   
-  container.innerHTML = '';
-  let total = 0;
-  
-  cart.forEach((producto, index) => {
-    const item = document.createElement('div');
-    item.className = 'cart-item';
-    item.innerHTML = `
-      <img src="${producto.imagen}" alt="${producto.nombre}" class="cart-img">
+  // Agrupar items por nombre y talle
+  const groupedItems = cart.reduce((acc, item, index) => {
+    const key = `${item.nombre}-${item.talle}`;
+    if (!acc[key]) {
+      acc[key] = {
+        ...item,
+        indices: [index]
+      };
+    } else {
+      acc[key].cantidad += item.cantidad;
+      acc[key].indices.push(index);
+    }
+    return acc;
+  }, {});
+
+  container.innerHTML = Object.values(groupedItems).map(item => `
+    <div class="cart-item">
+      <img src="${item.imagen}" alt="${item.nombre}" class="cart-img">
       <div class="cart-info">
-        <h3>${producto.nombre}</h3>
-        <p>Talle: ${producto.talle}</p>
+        <h3>${item.nombre}</h3>
+        <p>Talle: ${item.talle} x${item.cantidad}</p>
       </div>
       <div class="cart-actions">
-        <p class="cart-item-price">$${producto.precio.toLocaleString('es-AR')}</p>
-        <button class="btn-eliminar" data-index="${index}">
+        <p class="cart-item-price">$${(item.precio * item.cantidad).toLocaleString('es-AR')}</p>
+        <button class="btn-eliminar" onclick="removeGroupedItems(${JSON.stringify(item.indices)})">
           <i class="fas fa-trash-alt"></i> Eliminar
         </button>
       </div>
-    `;
-    
-    const deleteBtn = item.querySelector('.btn-eliminar');
-    deleteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const itemIndex = parseInt(e.currentTarget.dataset.index);
-      removeFromCart(itemIndex);
-    });
-    
-    container.appendChild(item);
-    total += producto.precio;
-  });
-  
+    </div>
+  `).join('');
+
   if (totalDisplay) {
-    totalDisplay.innerHTML = `<strong>Total:</strong> <span class="cart-total-price">$${total.toLocaleString('es-AR')}</span>`;
+    totalDisplay.innerHTML = `<strong>Total:</strong> <span class="cart-total-price">$${calculateTotal().toLocaleString('es-AR')}</span>`;
   }
 }
 
-// --------------------
-// SISTEMA DE COMPRA CON MERCADO PAGO
-// --------------------
-function initCheckout() {
-  const compraActual = JSON.parse(localStorage.getItem('compraActual')) || [];
-  const checkoutResume = document.getElementById('checkout-resume');
+function removeGroupedItems(indices) {
+  // Eliminar en orden descendente para no afectar los índices
+  indices.sort((a, b) => b - a).forEach(i => removeFromCart(i));
+}
+
+// Función para mostrar modal de confirmación
+function showConfirmationModal(message, onConfirm) {
+  // Crear el modal si no existe
+  let modal = document.getElementById('confirmation-modal');
   
-  if (compraActual.length === 0) {
-    checkoutResume.innerHTML = '<p>No hay productos en esta compra. <a href="index.html">Volver a la tienda</a></p>';
-    return;
-  }
-  
-  let total = 0;
-  let html = '<div class="checkout-items">';
-  
-  compraActual.forEach(item => {
-    html += `
-      <div class="checkout-item">
-        <img src="${item.imagen}" alt="${item.nombre}" width="50">
-        <div>
-          <h3>${item.nombre}</h3>
-          <p>Talle: ${item.talle}</p>
-          <p>Precio: $${item.precio.toLocaleString('es-AR')}</p>
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'confirmation-modal';
+    modal.className = 'confirmation-modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h3 class="modal-title"><i class="fas fa-exclamation-circle"></i> Confirmar acción</h3>
+        <p class="modal-message">${message}</p>
+        <div class="modal-buttons">
+          <button class="modal-btn modal-btn-cancel">Cancelar</button>
+          <button class="modal-btn modal-btn-confirm">Aceptar</button>
         </div>
       </div>
     `;
-    total += item.precio;
-  });
-  
-  html += `</div><p class="checkout-total">Total: <strong>$${total.toLocaleString('es-AR')}</strong></p>`;
-  checkoutResume.innerHTML = html;
-  
-  // Guardar el total para mostrarlo en success.html
-  localStorage.setItem('totalCompra', total);
-  
-  // Procesar compra con Mercado Pago
-  const checkoutForm = document.getElementById('checkout-form');
-  checkoutForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+    document.body.appendChild(modal);
     
-    // Obtener datos del formulario
-    const nombre = document.getElementById('nombre').value;
-    const direccion = document.getElementById('direccion').value;
-    const email = document.getElementById('email').value;
-    const telefono = document.getElementById('telefono').value;
-    const metodoPago = document.querySelector('input[name="pago"]:checked').value;
+    // Manejar clic en cancelar
+    modal.querySelector('.modal-btn-cancel').addEventListener('click', () => {
+      hideConfirmationModal();
+    });
     
-    // Guardar datos de envío para mostrar en success.html
-    const datosEnvio = {
-      nombre,
-      direccion,
-      email,
-      telefono,
-      metodoPago
-    };
-    localStorage.setItem('datosEnvio', JSON.stringify(datosEnvio));
+    // Manejar clic en confirmar
+    modal.querySelector('.modal-btn-confirm').addEventListener('click', () => {
+      onConfirm();
+      hideConfirmationModal();
+    });
     
-    // Si es pago en efectivo, procesar localmente
-    if (metodoPago === 'efectivo') {
-      alert('¡Compra realizada con éxito! Pagarás en efectivo al recibir tu pedido.');
-      finalizarCompra();
-      return;
-    }
-    
-    // Si es tarjeta, usar Mercado Pago
-    try {
-      // Crear preferencia de pago
-      const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer TEST-178649999822958-062308-de1c8cfc56c089888fab3c4fbeac7372-294447407'
-        },
-        body: JSON.stringify({
-          items: compraActual.map(item => ({
-            title: item.nombre,
-            unit_price: item.precio,
-            quantity: 1,
-            description: `Talle: ${item.talle}`
-          })),
-          payer: {
-            name: nombre,
-            email: email,
-            phone: {
-              number: telefono
-            },
-            address: {
-              street_name: direccion
-            }
-          },
-          back_urls: {
-            success: "http://127.0.0.1:5500/success.html",
-            failure: "http://127.0.0.1:5500/failure.html",
-            pending: "http://127.0.0.1:5500/pending.html"
-          },
-          statement_descriptor: "ORBITA STORE"
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error ${response.status}: ${errorData.message || JSON.stringify(errorData)}`);
+    // Cerrar al hacer clic fuera del contenido
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        hideConfirmationModal();
       }
-      
-      const preference = await response.json();
-      
-      // Abrir checkout de Mercado Pago
-      const mp = new MercadoPago('TEST-7a53d5f6-f6cd-4703-a7c9-e4e17beb9364', {
-        locale: 'es-AR'
-      });
-      
-      mp.checkout({
-        preference: {
-          id: preference.id
-        },
-        autoOpen: true
-      });
-      
-    } catch (error) {
-      console.error('Error al procesar el pago:', error);
-      alert(`Ocurrió un error al procesar el pago: ${error.message}. Por favor, inténtalo de nuevo.`);
-    }
-  });
+    });
+  } else {
+    // Actualizar mensaje si el modal ya existe
+    modal.querySelector('.modal-message').textContent = message;
+    // Reemplazar el evento de confirmación
+    const confirmBtn = modal.querySelector('.modal-btn-confirm');
+    confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+    modal.querySelector('.modal-btn-confirm').addEventListener('click', () => {
+      onConfirm();
+      hideConfirmationModal();
+    });
+  }
   
-  // Función para finalizar compra (común para ambos métodos)
-  function finalizarCompra() {
-    // Vaciar carrito
-    localStorage.removeItem('carrito');
-    localStorage.removeItem('compraActual');
-    cart = [];
-    updateCartCount();
-    
-    // Guardar última orden para mostrar en success.html
-    localStorage.setItem('ultimaOrden', JSON.stringify({
-      productos: compraActual,
-      total: total
-    }));
-    
-    // Redirigir a página de éxito
+  // Mostrar el modal
+  setTimeout(() => {
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden'; // Prevenir scroll
+  }, 10);
+}
+
+// Función para ocultar el modal
+function hideConfirmationModal() {
+  const modal = document.getElementById('confirmation-modal');
+  if (modal) {
+    modal.classList.remove('show');
     setTimeout(() => {
-      window.location.href = 'success.html';
-    }, 1000);
+      if (modal.parentNode) {
+        modal.parentNode.removeChild(modal);
+      }
+      document.body.style.overflow = ''; // Restaurar scroll
+    }, 300);
   }
 }
 
-// Funcion para inicializar estrellas
-function createStars() {
-  const starsContainer = document.getElementById('stars');
-  const starsCount = 200;
-  
-  for (let i = 0; i < starsCount; i++) {
-    const star = document.createElement('div');
-    star.classList.add('star');
-    
-    // Posición aleatoria
-    const posX = Math.random() * 100;
-    const posY = Math.random() * 100;
-    
-    // Tamaño aleatorio (entre 1px y 3px)
-    const size = Math.random() * 2 + 1;
-    
-    // Duración de animación aleatoria
-    const duration = Math.random() * 5 + 3;
-    
-    // Opacidad aleatoria
-    const opacity = Math.random() * 0.5 + 0.3;
-    
-    star.style.left = `${posX}%`;
-    star.style.top = `${posY}%`;
-    star.style.width = `${size}px`;
-    star.style.height = `${size}px`;
-    star.style.setProperty('--duration', `${duration}s`);
-    star.style.setProperty('--opacity', opacity);
-    
-    starsContainer.appendChild(star);
-  }
-}
-
-// --------------------
-// MOSTRAR RESUMEN DE COMPRA (SUCCESS PAGE)
-// --------------------
-function mostrarResumenCompra() {
-  const resumenContainer = document.getElementById('resumen-compra');
-  
-  // Obtener datos guardados
-  const ultimaOrden = JSON.parse(localStorage.getItem('ultimaOrden'));
-  const datosEnvio = JSON.parse(localStorage.getItem('datosEnvio'));
-  
-  if (!ultimaOrden || !datosEnvio) {
-    resumenContainer.innerHTML = '<p>No se encontraron datos de la compra.</p>';
-    return;
-  }
-  
-  let html = `
-    <h2><i class="fas fa-shopping-bag"></i> Resumen de tu compra</h2>
-    <div class="productos-comprados">
-      <ul>
-  `;
-  
-  // Productos comprados
-  ultimaOrden.productos.forEach(producto => {
-    html += `
-        <li>
-          <span>${producto.nombre} (Talle: ${producto.talle})</span>
-          <span>$${producto.precio.toLocaleString('es-AR')}</span>
-        </li>
-    `;
-  });
-  
-  html += `
-      </ul>
-    </div>
-    <div class="resumen-total">
-      <span class="monto-total">$${ultimaOrden.total.toLocaleString('es-AR')}</span>
-    </div>
-    <div class="datos-envio">
-      <h3><i class="fas fa-truck"></i> Datos de envío</h3>
-      <p><strong>Nombre:</strong> ${datosEnvio.nombre}</p>
-      <p><strong>Dirección:</strong> ${datosEnvio.direccion}</p>
-      <p><strong>Teléfono:</strong> ${datosEnvio.telefono}</p>
-      <p><strong>Email:</strong> ${datosEnvio.email}</p>
-      <p><strong>Método de pago:</strong> ${datosEnvio.metodoPago === 'tarjeta' ? 'Tarjeta (Mercado Pago)' : 'Efectivo'}</p>
-    </div>
-  `;
-  
-  resumenContainer.innerHTML = html;
-}
 
 
-//---------------------
-// INICIALIZACIÓN
 // --------------------
-document.addEventListener('DOMContentLoaded', () => {
-  // Renderizar productos en la página principal
-  const productsContainer = document.querySelector('.products-container');
-  if (productsContainer) {
-    renderProducts(productsContainer, zapatillas);
-  }
-  
-  // Renderizar carrito
-  renderCartItems();
-  updateCartCount();
-  
-  // Vaciar carrito
-  document.getElementById('vaciar-carrito')?.addEventListener('click', () => {
-    if (confirm('¿Estás seguro de vaciar el carrito?')) {
-      clearCart();
-    }
-  });
-  
-  // Botón para comprar todo el carrito
-  document.getElementById('comprar-todo')?.addEventListener('click', () => {
+// SISTEMA DE COMPRA (VERSIÓN MEJORADA)
+// --------------------
+function initCheckout(productosDirectos = null) {
+  let productosCheckout = [];
+  let total = 0;
+
+  if (productosDirectos) {
+    // Modo "Comprar ahora" - productos directos
+    productosCheckout = Array.isArray(productosDirectos) ? productosDirectos : [productosDirectos];
+    total = productosCheckout.reduce((sum, item) => sum + (item.precio * (item.cantidad || 1)), 0);
+  } else {
+    // Modo normal - todo el carrito
     if (cart.length === 0) {
       alert('Tu carrito está vacío');
       return;
     }
-    
-    // Guardar todo el carrito como compra actual
-    localStorage.setItem('compraActual', JSON.stringify(cart));
-    window.location.href = 'checkout.html';
-  });
+    productosCheckout = [...cart];
+    total = calculateTotal();
+  }
+
+  // Guardar la compra para mostrar en success.html
+  localStorage.setItem('ultimaOrden', JSON.stringify({
+    productos: productosCheckout,
+    total: total,
+    fecha: new Date().toISOString()
+  }));
+
+  // Redirigir a la página de éxito
+  window.location.href = 'success.html';
+}
+
+// --------------------
+// MOSTRAR RESUMEN DE COMPRA (VERSIÓN MEJORADA)
+// --------------------
+function mostrarResumenCompra() {
+  const resumenContainer = document.getElementById('resumen-compra');
+  const ultimaOrden = JSON.parse(localStorage.getItem('ultimaOrden'));
   
+  if (!ultimaOrden) {
+    resumenContainer.innerHTML = '<p>No se encontraron datos de la compra.</p>';
+    return;
+  }
+  
+  // Agrupar productos para el resumen
+  const productosAgrupados = ultimaOrden.productos.reduce((acc, item) => {
+    const key = `${item.nombre}-${item.talle}`;
+    if (!acc[key]) {
+      acc[key] = {
+        ...item,
+        cantidad: 0,
+        subtotal: 0
+      };
+    }
+    acc[key].cantidad += item.cantidad || 1;
+    acc[key].subtotal += item.precio * (item.cantidad || 1);
+    return acc;
+  }, {});
+
+  resumenContainer.innerHTML = `
+    <div class="resumen-compra-detalle">
+      <h2><i class="fas fa-shopping-bag"></i> Resumen de tu pedido</h2>
+      <div class="productos-comprados">
+        <ul>
+          ${Object.values(productosAgrupados).map(item => `
+            <li>
+              <span>${item.nombre} (Talle: ${item.talle}) x${item.cantidad}</span>
+              <span>$${item.subtotal.toLocaleString('es-AR')}</span>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+      <div class="resumen-total">
+        <span>Total:</span>
+        <span class="monto-total">$${ultimaOrden.total.toLocaleString('es-AR')}</span>
+      </div>
+    </div>
+    <div class="instrucciones-pago">
+      <h3><i class="fas fa-info-circle"></i> Instrucciones para completar tu compra:</h3>
+      <ol>
+        <li>Envía una captura de este resumen al número de WhatsApp que aparece abajo</li>
+        <li>Indica tu nombre completo y dirección de envío</li>
+        <li>Te enviaremos los datos para el pago (transferencia o efectivo)</li>
+        <li>Una vez confirmado el pago, prepararemos tu pedido</li>
+      </ol>
+      <a href="https://wa.me/5492494625738?text=${encodeURIComponent(
+        `¡Hola Órbita! \n\nQuiero confirmar mi compra:\n\n` +
+        ` *Detalle del pedido:*\n` +
+        `${Object.values(productosAgrupados)
+          .map(p => ` ${p.nombre}\n   • Talle: ${p.talle}\n   • Cantidad: ${p.cantidad}\n   • Subtotal: $${p.subtotal.toLocaleString('es-AR')}`)
+          .join('\n')}\n\n` +
+        `*Total:* $${ultimaOrden.total.toLocaleString('es-AR')}\n\n` +
+        `Mis datos:\n` +
+        `• Nombre completo: \n` +
+        `• Direccion de envio: \n` +
+        `• Localidad: \n` +
+        `• Código postal: \n` +
+        `• Método de pago: \n\n` +
+        `¡Gracias!`
+      )}" class="whatsapp-btn" target="_blank">
+      <i class="fab fa-whatsapp"></i> Enviar comprobante por WhatsApp
+      </a>
+    </div>
+  `;
+  
+  // Limpiar solo si fue una compra desde el carrito
+  if (!ultimaOrden.productos.some(p => p.directPurchase)) {
+    cart = [];
+    localStorage.removeItem('carrito');
+    updateCartCount();
+  }
+}
+
+// --------------------
+// INICIALIZACIÓN (VERSIÓN MEJORADA)
+// --------------------
+document.addEventListener('DOMContentLoaded', () => {
+  // Renderizar productos
+  const productsContainer = document.querySelector('.products-container');
+  if (productsContainer) renderProducts(productsContainer, zapatillas);
+  
+  // Inicializar carrito
+  renderCartItems();
+  updateCartCount();
+  
+  // Event listeners
+  document.getElementById('vaciar-carrito')?.addEventListener('click', () => {
+  if (cart.length === 0) {
+    showToastNotification('El carrito ya está vacío');
+    return;
+  }
+
   // Scroll suave
   document.querySelector('.scroll-down')?.addEventListener('click', function(e) {
     e.preventDefault();
@@ -429,72 +399,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
+  showConfirmationModal(
+    '¿Estás seguro de que quieres vaciar todo el carrito? Esta acción no se puede deshacer.',
+    () => {
+      clearCart();
+      showToastNotification('El carrito se ha vaciado correctamente');
+    }
+  );
+  });
+  
+  document.getElementById('comprar-todo')?.addEventListener('click', () => initCheckout());
+  
   // Lógica de detalle de producto
   const params = new URLSearchParams(window.location.search);
   const nombre = params.get('nombre');
   
-  if (nombre && zapatillas[nombre]) {
+  if (nombre && zapatillas[nombre] && document.getElementById('detalle-img')) {
     const zap = zapatillas[nombre];
     
-    if (document.getElementById('detalle-img')) {
-      document.getElementById('detalle-img').src = zap.img;
-      document.getElementById('detalle-nombre').textContent = nombre;
-      document.getElementById('detalle-precio').textContent = `$${zap.precio.toLocaleString('es-AR')}`;
-      document.getElementById('detalle-descripcion').textContent = zap.descripcion;
-    }
+    document.getElementById('detalle-img').src = zap.img;
+    document.getElementById('detalle-nombre').textContent = nombre;
+    document.getElementById('detalle-precio').textContent = `$${zap.precio.toLocaleString('es-AR')}`;
+    document.getElementById('detalle-descripcion').textContent = zap.descripcion;
     
     // Talles disponibles
     const tallesContainer = document.querySelector('.talles');
     if (tallesContainer) {
-      tallesContainer.innerHTML = "";
-      
-      zap.talles.forEach(talle => {
-        const btn = document.createElement('button');
-        btn.className = "talle-btn";
-        btn.textContent = talle;
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.talle-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-        });
-        tallesContainer.appendChild(btn);
-      });
+      tallesContainer.innerHTML = zap.talles.map(talle => `
+        <button class="talle-btn" onclick="document.querySelectorAll('.talle-btn').forEach(b => b.classList.remove('selected')); this.classList.add('selected')">
+          ${talle}
+        </button>
+      `).join('');
     }
     
     // Botones de acción
     document.getElementById('btn-agregar-carrito')?.addEventListener('click', () => {
       const talleSeleccionado = document.querySelector('.talle-btn.selected');
-      if (!talleSeleccionado) {
-        alert('Por favor selecciona un talle antes de agregar al carrito.');
-        return;
-      }
+      if (!talleSeleccionado) return alert('Por favor selecciona un talle');
       
-      const talle = talleSeleccionado.textContent;
       addToCart({
         nombre: nombre,
         precio: zap.precio,
-        talle: talle,
+        talle: talleSeleccionado.textContent,
         imagen: zap.img
       });
     });
     
     document.getElementById('btn-comprar-ahora')?.addEventListener('click', () => {
       const talleSeleccionado = document.querySelector('.talle-btn.selected');
-      if (!talleSeleccionado) {
-        alert('Por favor selecciona un talle antes de comprar.');
-        return;
-      }
+      if (!talleSeleccionado) return alert('Por favor selecciona un talle');
       
-      const talle = talleSeleccionado.textContent;
-      
-      // Guardar compra individual
-      localStorage.setItem('compraActual', JSON.stringify([{
+      // Crear producto para compra directa (sin pasar por el carrito)
+      const productoDirecto = {
         nombre: nombre,
         precio: zap.precio,
-        talle: talle,
-        imagen: zap.img
-      }]));
+        talle: talleSeleccionado.textContent,
+        imagen: zap.img,
+        cantidad: 1,
+        directPurchase: true // Marcar como compra directa
+      };
       
-      window.location.href = 'checkout.html';
+      initCheckout(productoDirecto);
     });
     
     // Productos relacionados
@@ -502,30 +467,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (relacionadosContainer) {
       const relacionados = Object.keys(zapatillas)
         .filter(name => name !== nombre)
-        .slice(0, 3);
+        .slice(0, 3)
+        .reduce((acc, name) => ({ ...acc, [name]: zapatillas[name] }), {});
       
-      // Crear objeto con productos relacionados
-      const productosRelacionados = {};
-      relacionados.forEach(name => {
-        productosRelacionados[name] = zapatillas[name];
-      });
-      
-      renderProducts(relacionadosContainer, productosRelacionados);
+      renderProducts(relacionadosContainer, relacionados);
     }
   }
   
-  // Inicializar checkout si estamos en esa página
-  if (window.location.pathname.includes('checkout.html')) {
-    // Cargar SDK Mercado Pago dinámicamente
-    const script = document.createElement('script');
-    script.src = 'https://sdk.mercadopago.com/js/v2';
-    script.onload = () => {
-      // Una vez cargado el SDK, inicializar checkout
-      initCheckout();
-    };
-    document.head.appendChild(script);
+  // Página de éxito
+  if (window.location.pathname.includes('success.html')) {
+    createStars();
+    updateCartCount();
+    mostrarResumenCompra();
   }
-  
+
   // Configuración de partículas (asegurar que se vean detrás de todo)
   if (document.getElementById('particles-js')) {
     particlesJS("particles-js", {
@@ -543,16 +498,25 @@ document.addEventListener('DOMContentLoaded', () => {
       retina_detect: true
     });
   }
-  
-  // Inicializar página de éxito
-  if (window.location.pathname.includes('success.html')) {
-    // Crear estrellas en el fondo
-    createStars();
-    
-    // Actualizar contador del carrito (a 0)
-    updateCartCount();
-    
-    // Mostrar resumen de la compra
-    mostrarResumenCompra();
-  }
 });
+
+// Función para estrellas
+function createStars() {
+  const starsContainer = document.getElementById('stars');
+  if (!starsContainer) return;
+  
+  starsContainer.innerHTML = Array.from({ length: 200 }, () => {
+    const size = Math.random() * 2 + 1;
+    return `
+      <div class="star" style="
+        left: ${Math.random() * 100}%;
+        top: ${Math.random() * 100}%;
+        width: ${size}px;
+        height: ${size}px;
+        --duration: ${Math.random() * 5 + 3}s;
+        --opacity: ${Math.random() * 0.5 + 0.3};
+      "></div>
+    `;
+  }).join('');
+}
+
